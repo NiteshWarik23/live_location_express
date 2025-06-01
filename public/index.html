@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Tracking</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        #map {
+            /*height: 400px;*/
+            height: 100vh; /* Example: full viewport height */
+            width: 100%;   /* Example: full width */
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script src="http://localhost:4001/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io('http://localhost:4001');
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('changeLocation', (data) => {
+            console.log('Received location:', data);
+            alert("Got location: " + data.latitude + ", " + data.longitude);
+            // if (marker) {
+            //     marker.setLatLng([data.latitude, data.longitude]);
+            // } else {
+            //     marker = L.marker([data.latitude, data.longitude]).addTo(map);
+            // }
+
+            // map.setView([data.latitude, data.longitude], 13);
+            addMarker(data.latitude, data.longitude);
+        });
+
+        var map = L.map('map').setView([0,0], 2);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        function addMarker(lat, lng) {  
+            map.eachLayer(function (layer) {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            var marker = L.marker([lat, lng]).addTo(map);
+
+            map.setView([lat, lng], 13);
+        } 
+        // 🔐 Ask for location permission & show browser's own location
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        console.log("🧭 Browser's current location:", lat, lng);
+                        addMarker(lat, lng); // Optional: show your own location initially
+                    },
+                    (error) => {
+                        console.error('❌ Location permission denied or error:', error.message);
+                    }
+                );
+            } else {
+                console.warn("❌ Geolocation not supported in this browser.");
+            }
+
+          // 🟡 Listen to location changes and update marker
+            // socket.on('changeLocation', (data) => {
+            //     console.log('Received location:', data);
+            //     if (data && data.latitude && data.longitude) {
+            //         addMarker(data.latitude, data.longitude);
+            //     }
+            // });
+
+         // 🔥 Add a marker immediately to test rendering
+           //addMarker(19.0482, 72.8940);
+
+    </script>
+</body>
+
+</html>
